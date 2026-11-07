@@ -1,0 +1,75 @@
+name: checks
+
+# Runs the public checks (CHECKS.md, through tests/run.ts) on Apple silicon macOS, with the
+# Neovim release pinned in neovim.json and plugins installed from nvim-pack-lock.json.
+# Every action is pinned to a full commit SHA (its tag in the trailing comment); tests/ci_pins.ts checks it.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      NVIM_APPNAME: ulvim
+      TREE_SITTER_VERSION: 0.27.1
+      TREE_SITTER_SHA256: 46cb97d9a2c52c94e22d9a76c2f1116156b8b61f98360e2a9cce05fcb197cd4d
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Put ~/.local/bin on PATH
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install the tree-sitter CLI (0.26 or newer builds the parsers)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/tree-sitter.gz" \
+            "https://github.com/tree-sitter/tree-sitter/releases/download/v${TREE_SITTER_VERSION}/tree-sitter-macos-arm64.gz"
+          echo "${TREE_SITTER_SHA256}  $RUNNER_TEMP/tree-sitter.gz" | shasum -a 256 -c -
+          gunzip -c "$RUNNER_TEMP/tree-sitter.gz" > "$HOME/.local/bin/tree-sitter"
+          chmod +x "$HOME/.local/bin/tree-sitter"
+          "$HOME/.local/bin/tree-sitter" --version
+
+      - name: Install the pinned Neovim
+        run: |
+          bun scripts/nvim-install.ts
+          nvim --version | head -1
+
+      - name: Link the config
+        run: |
+          mkdir -p "$HOME/.config"
+          ln -sfn "$GITHUB_WORKSPACE" "$HOME/.config/ulvim"
+
+      # The first start installs every plugin (vim.pack.add) and starts the parser builds in the
+      # background; this waits for exactly the parsers lua/ulvim/plugins/syntax.lua asks for.
+      - name: Install plugins and parsers
+        run: >-
+          nvim --headless "+lua local ok, err = pcall(function()
+          local src = table.concat(vim.fn.readfile(vim.fn.stdpath('config') .. '/lua/ulvim/plugins/syntax.lua'), '\n')
+          local list = assert(loadstring('return ' .. assert(src:match('local wanted = (%b{})'), 'no parser list in syntax.lua')))()
+          local ts = require('nvim-treesitter')
+          local done, res = ts.install(list):pwait(900000)
+          assert(done and res, 'parser install: ' .. tostring(res))
+          local have = ts.get_installed()
+          local miss = vim.tbl_filter(function(p) return not vim.list_contains(have, p) end, list)
+          assert(#miss == 0, 'parsers missing: ' .. table.concat(miss, ' '))
+          end)
+          if not ok then io.stderr:write(tostring(err) .. '\n') vim.cmd('cquit 1') end
+          vim.cmd('qa!')"
+
+      # The token lets the plugin freshness check (ISC-126) use the authenticated API quota.
+      - name: Run the checks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bun tests/run.ts --unattended

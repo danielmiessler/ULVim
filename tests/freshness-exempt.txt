@@ -1,0 +1,2 @@
+# Plugins exempt from the 12-month freshness check (ISC-126), one per line: owner/repo — why.
+tpope/vim-repeat — stable and complete; every repeatable keymap leans on it, so its age is not decay.

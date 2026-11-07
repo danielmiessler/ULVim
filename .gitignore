@@ -1,0 +1,6 @@
+.DS_Store
+.harness/
+# A user's own layer: never committed by accident (files already tracked stay tracked).
+lua/user/
+shell/user.zsh
+search-roots.local.json

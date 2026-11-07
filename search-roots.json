@@ -1,0 +1,10 @@
+{
+  "_comment": "What the ranked file finder searches. Read by lua/ulvim/search and scripts/search-index.ts. Put your own roots in search-roots.local.json (same shape), which wins when it exists. projects are searched as one tree each; every child folder of a container is its own project; folders that do not exist are skipped. Git repos list their own files (git ls-files), so build output and caches a repo does not track never appear. excludes are folder names nobody edits by hand, applied everywhere.",
+  "projects": ["~/.config/nvim"],
+  "containers": ["~/Projects", "~/projects", "~/code", "~/src", "~/dev"],
+  "excludes": [
+    ".git", "node_modules", "dist", "build", ".next", ".venv", "venv",
+    "site-packages", "__pycache__", "vendor", "target", ".cache",
+    "* 2", "*_backup", "*-old", "*-bak", "tmp"
+  ]
+}
