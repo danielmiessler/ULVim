@@ -108,6 +108,7 @@ map("n", "<leader>uu", function()
 end, { desc = "Undo tree" })
 map("n", "<leader>um", function() require("render-markdown").toggle() end, { desc = "Render markdown" })
 map("n", "<leader>uz", "<Cmd>NoNeckPain<CR>", { desc = "Focus layout" })
+map("n", "<leader>uC", "<Cmd>UlTheme<CR>", { desc = "Theme picker" })
 
 -- Mac Cmd keys: undo and redo work; any other Cmd chord never types into the buffer
 -- (an unmapped Cmd chord would otherwise insert its literal key name, such as `<D-z>`).

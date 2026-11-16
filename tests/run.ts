@@ -13,7 +13,7 @@ import { join } from "node:path";
 const ROOT = join(import.meta.dir, "..");
 const LIVE_TERMINAL = /^\s*\/\/ needs: live-terminal\s*$/m;
 
-type Row = { isc: string; check: string; threshold: string; tool: string };
+type Row = { isc: string; check: string; threshold: string; tool: string; type?: string };
 
 // Split a markdown table row on unescaped pipes; `\|` inside a cell stands for `|`.
 const cells = (line: string) => line.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim().replace(/\\\|/g, "|"));
@@ -30,11 +30,12 @@ export function parseRows(text: string): Row[] {
     if (id < 0 || cmd < 0) continue;
     const check = head.indexOf("check");
     const thr = head.indexOf("threshold");
+    const typ = head.indexOf("type");
     const rows: Row[] = [];
     for (const l of lines.slice(i + 1)) {
       if (!l.startsWith("|")) break;
       const c = cells(l);
-      if (/^ISC-\d+$/.test(c[id] ?? "")) rows.push({ isc: c[id], check: check >= 0 ? c[check] : "", threshold: thr >= 0 ? c[thr] : "", tool: c[cmd] ?? "" });
+      if (/^ISC-\d+$/.test(c[id] ?? "")) rows.push({ isc: c[id], check: check >= 0 ? c[check] : "", threshold: thr >= 0 ? c[thr] : "", tool: c[cmd] ?? "", type: typ >= 0 ? c[typ] : "" });
     }
     return rows;
   }

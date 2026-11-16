@@ -319,6 +319,8 @@ function seedHome(home: string) {
 function env(home: string) {
   const e: Record<string, string> = { HOME: home, NVIM_APPNAME: "ulvim", PATH: process.env.PATH ?? "", TERM: "xterm-256color", LANG: "en_US.UTF-8",
     GIT_AUTHOR_NAME: "ULVim", GIT_AUTHOR_EMAIL: "ulvim@example.com", GIT_COMMITTER_NAME: "ULVim", GIT_COMMITTER_EMAIL: "ulvim@example.com" };
+  // ULVIM_THEME=<look> captures that look (ISC-182); unset, the screenshots show the default.
+  if (process.env.ULVIM_THEME) e.ULVIM_THEME = process.env.ULVIM_THEME;
   return e;
 }
 

@@ -50,7 +50,7 @@ function treeSitter(): Step {
 
 function neovim(): Step {
   if (noNvim) return { step: "neovim", ok: true, detail: "skipped (--no-nvim)" };
-  const p = Bun.spawnSync(["bun", join(ROOT, "scripts/nvim-install.ts"), ...(check ? ["--check"] : [])], { cwd: ROOT, env: { ...process.env, HOME } });
+  const p = Bun.spawnSync([process.execPath, join(ROOT, "scripts/nvim-install.ts"), ...(check ? ["--check"] : [])], { cwd: ROOT, env: { ...process.env, HOME } });
   const line = p.stdout.toString().trim().split("\n").pop() ?? "{}";
   let res: Record<string, unknown> = {};
   try { res = JSON.parse(line); } catch { /* reported below */ }

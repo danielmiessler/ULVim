@@ -21,7 +21,7 @@ The layer also sets `EDITOR`, `VISUAL` and `MANPAGER` to Neovim.
 
 ## Install
 
-Needs macOS on Apple silicon with `git`, `zsh`, `bun`, Homebrew, the tree-sitter CLI 0.26 or newer (`brew install tree-sitter-cli`), and the Xcode Command Line Tools (the C compiler tree-sitter uses to build parsers; `xcode-select --install`). `fd` is optional (`brew install fd`): the file finder's indexer uses it for folders that are not git repos when it is installed, and walks them itself when it is not. The clone can live anywhere; the links point at it, so it has to stay where you put it.
+Needs macOS (Apple silicon or Intel) with `git`, `zsh`, `bun`, Homebrew, the tree-sitter CLI 0.26 or newer (`brew install tree-sitter-cli`), and the Xcode Command Line Tools (the C compiler tree-sitter uses to build parsers; `xcode-select --install`). `fd` is optional (`brew install fd`): the file finder's indexer uses it for folders that are not git repos when it is installed, and walks them itself when it is not. The clone can live anywhere; the links point at it, so it has to stay where you put it.
 
 ```sh
 git clone https://github.com/danielmiessler/ULVim.git ~/ULVim

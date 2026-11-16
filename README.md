@@ -51,7 +51,7 @@ You can also hand the install to a coding agent: [INSTALL.md](INSTALL.md) is wri
 
 **Requirements**
 
-- macOS on Apple silicon (Linux is not supported yet).
+- macOS on Apple silicon or Intel (Linux is not supported yet).
 - `git`, `zsh`, `bun`, Homebrew, and the Xcode Command Line Tools.
 - tree-sitter CLI 0.26 or newer: `brew install tree-sitter-cli`. Older ones fail every parser build silently.
 - A true-color terminal with a [Nerd Font](https://www.nerdfonts.com).
@@ -90,7 +90,7 @@ You can also hand the install to a coding agent: [INSTALL.md](INSTALL.md) is wri
 
 ### Look
 
-- **tokyonight storm** on a transparent background, with blue accents and rounded borders on every float.
+- **Tokyo Night storm** on a transparent background, with purple highlights and rounded borders on every float. Four more looks ship beside it: `twilight` (blue code, purple keywords), `blue` (blues only, amber keywords), `abyss` (deep-sea blues, electric aqua) and `neon` (electric blues, hot pink). `Space u C` previews them as you move, `:UlTheme <name>` sets one, and the choice is remembered. `ULVIM_THEME=<name> nvim` opens one look for that session without saving it.
 - **One global statusline,** buffers as tabs, and a terminal title that shows the file name.
 - **The ULVim start screen** with your recent files on `1` to `6`.
 
@@ -164,6 +164,7 @@ The leader is `Space`. Press it and wait to see every key below it. Keys are for
 | `Space f t` / `Space f T` | file explorer in a float / in the window |
 | `Space u u` | undo tree |
 | `Space u m` | rendered markdown on or off |
+| `Space u C` | theme picker: storm, twilight, blue, abyss, neon; previews as you move, Esc keeps the old one |
 | `Space u z` | focus layout |
 
 In the file explorer, `l` opens, `h` and Backspace go up, `q` closes, and `Ctrl-v` / `Ctrl-x` open in a split. Neovim's own `gO` lists a markdown file's headings.

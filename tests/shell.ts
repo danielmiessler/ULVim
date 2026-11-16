@@ -21,7 +21,7 @@ function sandbox(): string {
   return home;
 }
 const install = (home: string, ...extra: string[]) => {
-  const p = Bun.spawnSync(["bun", join(ROOT, "scripts/install.ts"), "--no-nvim", ...extra], { cwd: ROOT, env: { ...process.env, HOME: home, ZDOTDIR: home }, stdout: "pipe" });
+  const p = Bun.spawnSync([process.execPath, join(ROOT, "scripts/install.ts"), "--no-nvim", ...extra], { cwd: ROOT, env: { ...process.env, HOME: home, ZDOTDIR: home }, stdout: "pipe" });
   return { code: p.exitCode, res: JSON.parse(p.stdout.toString() || "{}") as { ok: boolean; steps: { step: string; ok: boolean; changed?: boolean; detail: string; next?: string }[] } };
 };
 const step = (res: ReturnType<typeof install>["res"], name: string) => res.steps.find((s) => s.step === name);

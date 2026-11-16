@@ -12,7 +12,8 @@ local wanted = {
 }
 local have = ts.get_installed()
 local missing = vim.tbl_filter(function(p) return not vim.list_contains(have, p) end, wanted)
-if #missing > 0 then ts.install(missing) end
+-- The task is kept so an installer can wait for the build headlessly (setup's first start).
+if #missing > 0 then package.loaded["ulvim.ts_install"] = ts.install(missing) end
 
 -- Guard for neovim/neovim#38303 (open; fix PR #38613 closed unmerged): when the buffer changes
 -- while the highlighter is mid-pass, a node's range can point past the end of the buffer, and

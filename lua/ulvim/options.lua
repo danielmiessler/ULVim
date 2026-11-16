@@ -51,7 +51,10 @@ o.cursorline = true
 o.scrolloff = 12
 o.signcolumn = "yes"
 o.laststatus = 3
-o.cmdheight = 0
+-- Rex paints the window margin under the last row with that row's colors, so with no command-line
+-- row the statusline pills smear down into the margin and the screen looks vertically broken. Under
+-- Rex a blank message row sits last instead; everywhere else the statusline is the last row (ISC-181).
+o.cmdheight = vim.env.TERM_PROGRAM == "rex" and 1 or 0
 o.showmode = false
 o.termguicolors = true
 o.list = true

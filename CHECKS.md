@@ -58,16 +58,16 @@ Commands run from the repo root with `NVIM_APPNAME=ulvim`. This file is generate
 | ISC-47 | shell entry | ranked picker open | `PROBE='ulfind open' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-48 | shell entry cancel | nvim exits | `PROBE='ulfind cancel' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-50 | oil float | float with oil buffer | `PROBE='oil float' nvim --headless +'luafile tests/probe.lua'` |
-| ISC-51 | oil border color | blue | `PROBE='oil border' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-51 | oil border color | accent | `ULVIM_THEME=storm PROBE='oil border' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-52 | oil window | oil buffer, not float | `PROBE='oil window' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-53 | double space free | unmapped | `PROBE='unmapped n <leader><space>' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-55 | no hardcoded config path | 0 matches | `bun tests/static.ts no-config-path` |
 | ISC-59 | no bare chrome open | 0 matches | `bun tests/static.ts no-bare-chrome` |
-| ISC-69 | colorscheme | tokyonight-storm | `PROBE='colorscheme tokyonight-storm' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-69 | colorscheme | tokyonight-storm | `ULVIM_THEME=storm PROBE='colorscheme tokyonight-storm' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-70 | transparent | bg nil | `PROBE='hl-nobg Normal' nvim --headless +'luafile tests/probe.lua'` |
-| ISC-71 | search blues | #1a3a9e / #7aa2f7 | `PROBE='search-blues' nvim --headless +'luafile tests/probe.lua'` |
-| ISC-72 | border blue | #7aa2f7 | `PROBE='hl-fg FloatBorder #7aa2f7' nvim --headless +'luafile tests/probe.lua'` |
-| ISC-73 | yank blue | #7aa2f7 | `PROBE='hl-bg YankHighlight #7aa2f7' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-71 | search accent | fill / accent | `ULVIM_THEME=storm PROBE='search-accent' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-72 | border accent | #bb9af7 | `ULVIM_THEME=storm PROBE='hl-fg FloatBorder #bb9af7' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-73 | yank accent | #bb9af7 | `ULVIM_THEME=storm PROBE='hl-bg YankHighlight #bb9af7' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-74 | one color owner | 0 other files | `bun tests/static.ts one-color-owner` |
 | ISC-75 | dashboard art | text present | `PROBE='dashboard art' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-76 | dashboard brand | logo label present | `PROBE='dashboard brand' nvim --headless +'luafile tests/probe.lua'` |
@@ -117,8 +117,18 @@ Commands run from the repo root with `NVIM_APPNAME=ulvim`. This file is generate
 | ISC-135 | no flash | 0 in lockfile | `bun tests/static.ts no-flash` |
 | ISC-136 | scroll margin | 12 | `PROBE='opt scrolloff 12' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-137 | leader chord time | 1000 | `PROBE='opt timeoutlen 1000' nvim --headless +'luafile tests/probe.lua'` |
-| ISC-141 | no purple | 0 groups | `PROBE='no-purple' nvim --headless +'luafile tests/probe.lua'` |
-| ISC-142 | visual blue | #283c86 | `PROBE='hl-bg Visual #283c86' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-141 | default look | storm | `PROBE='theme-default' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-142 | storm purple | stock syntax, purple accents | `ULVIM_THEME=storm PROBE='hl-fg @keyword #9d7cd8' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=storm PROBE='hl-fg @string #9ece6a' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=storm PROBE='hl-fg CursorLineNr,SnacksPickerMatch #bb9af7' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=storm PROBE='hl-bg Visual #3d3366' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-179 | blue-only palettes | 0 off-hue groups | `ULVIM_THEME=blue PROBE='blue-only' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=abyss PROBE='blue-only' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-180 | amber keywords | #e0af68 | `ULVIM_THEME=blue PROBE='hl-fg @keyword,Statement #e0af68' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-182 | five looks load | 5 | `ULVIM_THEME=storm PROBE='theme-all' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-183 | twilight | blue code, purple keywords | `ULVIM_THEME=twilight PROBE='hl-fg @string #9cd8ff' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=twilight PROBE='hl-fg @number #65bcff' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=twilight PROBE='hl-fg @keyword #9d7cd8' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=twilight PROBE='hl-fg FloatBorder #bb9af7' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-184 | abyss | aqua keywords, navy floats | `ULVIM_THEME=abyss PROBE='hl-fg @keyword #22d3ee' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=abyss PROBE='hl-bg NormalFloat #0a1120' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-185 | neon | pink keywords, blue functions | `ULVIM_THEME=neon PROBE='hl-fg @keyword,FloatBorder #ff4fa3' nvim --headless +'luafile tests/probe.lua' && ULVIM_THEME=neon PROBE='hl-fg @function #3d8bff' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-186 | theme saved | next start opens it | `ULVIM_THEME=storm PROBE='theme-persist' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-187 | live preview | repaints, Esc restores | `ULVIM_THEME=storm PROBE='theme-preview' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-188 | unknown name | look untouched | `ULVIM_THEME=storm PROBE='theme-unknown' nvim --headless +'luafile tests/probe.lua'` |
+| ISC-181 | blank last row under Rex | cmdheight 1 under rex, 0 elsewhere | `TERM_PROGRAM=rex PROBE='opt cmdheight 1' nvim --headless +'luafile tests/probe.lua' && TERM_PROGRAM=ghostty PROBE='opt cmdheight 0' nvim --headless +'luafile tests/probe.lua'` |
 | ISC-143 | pinned upstream nvim | path and version match | `bun tests/neovim_pin.ts path` |
 | ISC-144 | checksum enforced | tampered copy refused | `bun tests/neovim_pin.ts tamper` |
 | ISC-147 | stale node text | empty text, no error | `PROBE='stale-node-text' nvim --headless +'luafile tests/probe.lua'` |

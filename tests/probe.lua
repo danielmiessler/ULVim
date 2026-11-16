@@ -296,27 +296,99 @@ C["hl-bg"] = function(names, want)
 	end
 	return true, names
 end
-C["no-purple"] = function()
+-- Hue in degrees and saturation of an integer RGB color.
+local function hsv(n)
+	local r, g, b = bit.rshift(n, 16) / 255, bit.band(bit.rshift(n, 8), 255) / 255, bit.band(n, 255) / 255
+	local mx, mn = math.max(r, g, b), math.min(r, g, b)
+	local d = mx - mn
+	if d == 0 then return 0, 0, mx end
+	local h
+	if mx == r then h = ((g - b) / d) % 6 elseif mx == g then h = (b - r) / d + 2 else h = (r - g) / d + 4 end
+	return h * 60, d / mx, mx
+end
+C["blue-only"] = function()
+	-- ISC-179: blues (hue 175..245), near-greys, the amber accent band, and red only where it means an error or a deletion.
 	local bad = {}
-	-- Highlighting and UI accents only: search, selection, yank, menus, and every float border
-	-- or title. Syntax colors (keywords, escapes) keep the theme palette (ISC-98 look parity).
-	local fixed = { Search = 1, IncSearch = 1, CurSearch = 1, Visual = 1, YankHighlight = 1, PmenuSel = 1, CursorLineNr = 1, DashboardMruIcon = 1, DashboardShortCutIcon = 1 }
-	local function accent(name) return fixed[name] or name:match("Border$") or name:match("^%a*Float%a*Title$") or name:match("^Snacks%a*Title$") or name:match("^MiniClue%a*Title$") end
 	for name, h in pairs(vim.api.nvim_get_hl(0, {})) do
-		if not h.link and accent(name) then
+		if not h.link then
 			for _, k in ipairs({ "fg", "bg", "sp" }) do
-				local v = hex(h[k])
-				if v == "#9d7cd8" or v == "#bb9af7" then bad[#bad+1] = name .. "." .. k end
+				if h[k] then
+					local hue, sat, val = hsv(h[k])
+					local grey = sat < 0.2 or val < 0.2
+					local blue = hue >= 175 and hue <= 245
+					local amber = hue >= 25 and hue <= 50
+					local n = name:lower()
+					-- Dim red tints (diff and error backgrounds) drift toward 260..340, so the band is wide; the name gates it.
+					local red = (hue < 20 or hue > 260) and (n:match("err") or n:match("delet") or n:match("remov") or n:match("bad") or n:match("fixme") or n:match("unresolved") or n:match("^diffold"))
+					if name:match("^RedrawDebug") then red = true end -- Neovim redraw-debug groups, never drawn in use
+					if not (grey or blue or amber or red) then bad[#bad+1] = name .. "." .. k .. "=" .. hex(h[k]) end
+				end
 			end
 		end
 	end
 	table.sort(bad)
-	return #bad == 0, #bad == 0 and "none" or (#bad .. ": " .. table.concat(bad, ", ", 1, math.min(#bad, 12)))
+	return #bad == 0, #bad == 0 and "none" or (#bad .. ": " .. table.concat(bad, ", ", 1, math.min(#bad, 40)))
 end
-C["search-blues"] = function()
-	local ok1, d1 = C["hl-bg"]("Search", "#1a3a9e")
-	local ok2, d2 = C["hl-bg"]("IncSearch,CurSearch", "#7aa2f7")
+-- Search on the look's deep fill, the current match on its accent (ISC-71).
+C["search-accent"] = function()
+	local t = require("ulvim.colors").themes[require("ulvim.colors").current]
+	local ok1, d1 = C["hl-bg"]("Search", t.fill)
+	local ok2, d2 = C["hl-bg"]("IncSearch,CurSearch", t.accent)
 	return ok1 and ok2, d1 .. "; " .. d2
+end
+-- themes (ISC-182..188) ---------------------------------------------------------------
+local function ucolors() return require("ulvim.colors") end
+C["theme-default"] = function()
+	local U = ucolors()
+	local r = { U.resolve(nil, nil), U.resolve("nope", nil), U.resolve(nil, "nope"), U.resolve(nil, "neon"), U.resolve("abyss", "neon") }
+	local want = { "storm", "storm", "storm", "neon", "abyss" }
+	return vim.deep_equal(r, want), "resolve -> " .. table.concat(r, ",")
+end
+C["theme-all"] = function()
+	local U, bad = ucolors(), {}
+	for _, n in ipairs(U.order) do
+		local ok = pcall(U.apply, n)
+		local blue = require("tokyonight.colors").setup().blue
+		local la = hex(hl("lualine_a_normal").bg)
+		if not ok or vim.g.colors_name ~= "tokyonight-" .. n or la ~= blue or hex(hl("FloatBorder").fg) ~= U.themes[n].accent then
+			bad[#bad + 1] = n .. "(" .. tostring(vim.g.colors_name) .. " lualine=" .. tostring(la) .. ")"
+		end
+	end
+	return #U.order == 5 and #bad == 0, #bad == 0 and table.concat(U.order, ",") or table.concat(bad, ", ")
+end
+C["theme-persist"] = function()
+	local U = ucolors()
+	local f = U.state_file
+	local old = vim.uv.fs_stat(f) and vim.fn.readfile(f) or nil
+	vim.cmd("UlTheme abyss")
+	local wrote = vim.fn.readfile(f)[1]
+	local next_start = U.resolve(nil, wrote)
+	local env_wins = U.resolve("neon", wrote)
+	if old then vim.fn.writefile(old, f) else os.remove(f) end
+	return wrote == "abyss" and U.current == "abyss" and next_start == "abyss" and env_wins == "neon",
+		string.format("saved=%s current=%s next=%s env=%s", tostring(wrote), U.current, next_start, env_wins)
+end
+C["theme-unknown"] = function()
+	local U = ucolors()
+	U.apply("twilight")
+	local before = hex(hl("@keyword").fg)
+	local ok = U.apply("plaid")
+	return ok == false and U.current == "twilight" and hex(hl("@keyword").fg) == before, "current=" .. U.current
+end
+C["theme-preview"] = function()
+	local U = ucolors()
+	U.apply("storm")
+	keys("<leader>uC")
+	wait(1500, function() return #Snacks.picker.get() > 0 end)
+	local p = Snacks.picker.get()[1]
+	if not p then return false, "no picker" end
+	p:action("list_down")
+	wait(800, function() return U.current ~= "storm" end)
+	local previewed = U.current
+	p:close()
+	wait(800, function() return U.current == "storm" end)
+	return previewed == "twilight" and U.current == "storm" and vim.g.colors_name == "tokyonight-storm",
+		"previewed=" .. tostring(previewed) .. " after-esc=" .. U.current
 end
 C["no-jk-prefix"] = function()
 	local bad = {}
@@ -338,7 +410,12 @@ C["stale-node-text"] = function()
 	local ok2, err2 = pcall(vim.treesitter.get_node_text, nil, 0) -- a different error must still raise
 	return ok and text == "" and not ok2, string.format("stale: ok=%s text=%q; bad call raised=%s", tostring(ok), tostring(text), tostring(not ok2))
 end
-C["hl-fg"] = function(name, want) return eq(hex(hl(name).fg), want, name .. " fg") end
+C["hl-fg"] = function(names, want)
+	for n in names:gmatch("[^,]+") do
+		if hex(hl(n).fg) ~= want then return false, n .. " fg=" .. tostring(hex(hl(n).fg)) end
+	end
+	return true, names
+end
 C["dashboard"] = function(what)
 	vim.cmd("enew")
 	Snacks.dashboard.open()
@@ -362,7 +439,7 @@ C["tabline-buffers"] = function()
 end
 C["ui2-enabled"] = function()
 	local ok, ui2 = pcall(require, "vim._core.ui2")
-	return ok and ui2 and (ui2.enabled or (vim.g.ui2_enabled ~= false)) and vim.o.cmdheight == 0, "cmdheight=" .. vim.o.cmdheight
+	return ok and ui2 and (ui2.enabled or (vim.g.ui2_enabled ~= false)) and vim.o.cmdheight == (vim.env.TERM_PROGRAM == "rex" and 1 or 0), "cmdheight=" .. vim.o.cmdheight
 end
 
 -- discovery ----------------------------------------------------------------------
@@ -530,7 +607,7 @@ C["oil"] = function(what)
 	wait(800, function() return vim.bo.filetype == "oil" end)
 	local cfg = vim.api.nvim_win_get_config(0)
 	if what == "float" then return vim.bo.filetype == "oil" and cfg.relative ~= "", vim.bo.filetype .. " relative=" .. cfg.relative end
-	return vim.wo.winhighlight:find("FloatBorder:OilFloatBorder", 1, true) ~= nil and hex(hl("OilFloatBorder").fg) == "#7aa2f7", vim.wo.winhighlight
+	return vim.wo.winhighlight:find("FloatBorder:OilFloatBorder", 1, true) ~= nil and hex(hl("OilFloatBorder").fg) == require("ulvim.colors").themes[require("ulvim.colors").current].accent, vim.wo.winhighlight
 end
 
 -- Your own probes, if tests/probe_user.lua exists: it returns a function that adds checks to C.

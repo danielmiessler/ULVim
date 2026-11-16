@@ -14,7 +14,10 @@ import { dirname, join } from "node:path";
 class InvariantViolation extends Error {}
 function invariant(cond: unknown, msg: string): asserts cond { if (!cond) throw new InvariantViolation(msg); }
 
-type Pin = { version: string; asset: string; sha256: string; source: string };
+// neovim.json pins one version with one tarball per CPU, keyed by process.arch (arm64 for Apple silicon,
+// x64 for Intel Macs), so the same pin installs on either.
+type Asset = { asset: string; sha256: string };
+type Pin = { version: string; assets: Record<string, Asset>; source: string };
 const ROOT = join(import.meta.dir, "..");
 const PIN_FILE = join(ROOT, "neovim.json");
 // The release asset names a file inside OPT and the download URL, so it is one plain file name:
@@ -26,6 +29,12 @@ const API = "https://api.github.com/repos/neovim/neovim/releases";
 
 const out = (o: object, code = 0): never => { console.log(JSON.stringify(o)); process.exit(code); };
 const readPin = (): Pin => JSON.parse(readFileSync(PIN_FILE, "utf8"));
+const ARCH = process.env.ULVIM_NVIM_ARCH ?? process.arch;
+function assetFor(pin: Pin): Asset {
+  const a = pin.assets?.[ARCH];
+  invariant(a, `neovim.json pins no tarball for this CPU (${ARCH}); it has: ${Object.keys(pin.assets ?? {}).join(", ")}`);
+  return a;
+}
 const versionOf = (nvim: string) => {
   if (!existsSync(nvim)) return null;
   const p = Bun.spawnSync([nvim, "--version"]);
@@ -36,12 +45,15 @@ async function latest(): Promise<Pin> {
   invariant(r.ok, `GitHub latest release: HTTP ${r.status}`);
   const j = await r.json() as { tag_name: string; prerelease: boolean; html_url: string; assets: { name: string; digest?: string }[] };
   invariant(!j.prerelease && /^v\d+\.\d+\.\d+$/.test(j.tag_name), `not a stable release: ${j.tag_name}`);
-  const asset = readPin().asset;
-  invariant(typeof asset === "string" && ASSET.test(asset), `neovim.json asset is not a release tarball name: ${JSON.stringify(asset)}`);
-  const a = j.assets.find((x) => x.name === asset);
-  const digest = a?.digest;
-  invariant(digest?.startsWith("sha256:"), `release ${j.tag_name} has no sha256 digest for ${asset}`);
-  return { version: j.tag_name.slice(1), asset, sha256: digest.slice(7), source: j.html_url };
+  const assets: Record<string, Asset> = {};
+  for (const [arch, { asset }] of Object.entries(readPin().assets ?? {})) {
+    invariant(typeof asset === "string" && ASSET.test(asset), `neovim.json asset is not a release tarball name: ${JSON.stringify(asset)}`);
+    const digest = j.assets.find((x) => x.name === asset)?.digest;
+    invariant(digest?.startsWith("sha256:"), `release ${j.tag_name} has no sha256 digest for ${asset}`);
+    assets[arch] = { asset, sha256: digest.slice(7) };
+  }
+  invariant(Object.keys(assets).length > 0, "neovim.json pins no assets");
+  return { version: j.tag_name.slice(1), assets, source: j.html_url };
 }
 const sha256 = (buf: Uint8Array) => createHash("sha256").update(buf).digest("hex");
 
@@ -54,8 +66,9 @@ function swapLink(link: string, target: string) {
 }
 
 async function install(pin: Pin, file?: string) {
-  invariant(/^\d+\.\d+\.\d+$/.test(pin.version) && /^[0-9a-f]{64}$/.test(pin.sha256), "neovim.json is malformed");
-  invariant(typeof pin.asset === "string" && ASSET.test(pin.asset), `neovim.json asset is not a release tarball name: ${JSON.stringify(pin.asset)}`);
+  const { asset, sha256: want } = assetFor(pin);
+  invariant(/^\d+\.\d+\.\d+$/.test(pin.version) && /^[0-9a-f]{64}$/.test(want), "neovim.json is malformed");
+  invariant(typeof asset === "string" && ASSET.test(asset), `neovim.json asset is not a release tarball name: ${JSON.stringify(asset)}`);
   const dest = join(OPT, `v${pin.version}`);
   const nvimBin = join(BIN, "nvim");
   if (!file && versionOf(join(dest, "bin/nvim")) === pin.version && existsSync(nvimBin) && versionOf(nvimBin) === pin.version)
@@ -63,20 +76,20 @@ async function install(pin: Pin, file?: string) {
   let bytes: Uint8Array;
   if (file) bytes = new Uint8Array(readFileSync(file));
   else {
-    const url = `https://github.com/neovim/neovim/releases/download/v${pin.version}/${pin.asset}`;
+    const url = `https://github.com/neovim/neovim/releases/download/v${pin.version}/${asset}`;
     const r = await fetch(url);
     invariant(r.ok, `download ${url}: HTTP ${r.status}`);
     bytes = new Uint8Array(await r.arrayBuffer());
   }
   const got = sha256(bytes);
-  if (got !== pin.sha256) return out({ ok: false, refused: "sha256 mismatch", want: pin.sha256, got }, 1);
+  if (got !== want) return out({ ok: false, refused: "sha256 mismatch", asset, want, got }, 1);
   mkdirSync(OPT, { recursive: true });
   const work = mkdtempSync(join(OPT, ".install-"));
   try {
-    writeFileSync(join(work, pin.asset), bytes);
-    const x = Bun.spawnSync(["tar", "-xzf", join(work, pin.asset), "-C", work]);
+    writeFileSync(join(work, asset), bytes);
+    const x = Bun.spawnSync(["tar", "-xzf", join(work, asset), "-C", work]);
     invariant(x.exitCode === 0, "tar failed: " + x.stderr.toString());
-    const unpacked = join(work, pin.asset.replace(/\.tar\.gz$/, ""));
+    const unpacked = join(work, asset.replace(/\.tar\.gz$/, ""));
     invariant(versionOf(join(unpacked, "bin/nvim")) === pin.version, `tarball nvim is not v${pin.version}`);
     rmSync(dest, { recursive: true, force: true });
     renameSync(unpacked, dest);
